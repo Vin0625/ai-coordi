@@ -11,6 +11,10 @@ export const theme = {
     text: "#222222",
     textSecondary: "#8A8A8A",
   },
+  fonts: {
+    primary:
+      '"Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif',
+  },
 };
 
 // 기본 Box 컴포넌트
@@ -20,7 +24,7 @@ export const Box = styled.div`
 
 // 헤더
 export const Header = styled.header`
-  padding: 32px 48px;
+  padding: 24px 40px;
   background: linear-gradient(
     135deg,
     rgba(200, 159, 123, 1) 0%,
@@ -34,11 +38,12 @@ export const Header = styled.header`
   top: 0;
   z-index: 10;
   box-shadow: 0 4px 16px rgba(200, 159, 123, 0.25);
+  font-family: ${theme.fonts.primary};
 `;
 
 export const HeaderTitle = styled.h1`
   margin: 0;
-  font-size: 36px;
+  font-size: 32px;
   font-weight: 600;
   color: #ffffff;
   letter-spacing: 1px;
@@ -47,36 +52,36 @@ export const HeaderTitle = styled.h1`
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
   @media (max-width: 840px) {
-    font-size: 30px;
+    font-size: 26px;
   }
 `;
 
 // 메인 컨테이너
 export const Main = styled.main`
-  max-width: 1400px;
-  margin: 48px auto;
-  padding: 0 48px 64px;
+  max-width: 1200px;
+  margin: 32px auto;
+  padding: 0 32px 48px;
   display: grid;
   grid-template-columns: 1.1fr 1.3fr;
-  gap: 40px;
+  gap: 32px;
 
   @media (max-width: 1200px) {
     max-width: 100%;
-    padding: 0 32px 48px;
+    padding: 0 24px 40px;
   }
 
   @media (max-width: 840px) {
     grid-template-columns: 1fr;
-    gap: 24px;
-    padding: 0 20px 40px;
+    gap: 20px;
+    padding: 0 16px 32px;
   }
 `;
 
 // 카드
 export const Card = styled.section`
   background: ${theme.colors.cardBackground};
-  border-radius: 24px;
-  padding: 40px;
+  border-radius: 20px;
+  padding: 32px;
   box-shadow: 0 4px 20px rgba(200, 159, 123, 0.1);
   border: 1px solid rgba(200, 159, 123, 0.12);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -86,23 +91,23 @@ export const Card = styled.section`
   }
 
   @media (max-width: 840px) {
-    padding: 28px 24px;
+    padding: 24px 20px;
   }
 `;
 
 export const CardTitle = styled.h2`
   margin-top: 0;
-  font-size: 28px;
-  margin-bottom: 32px;
+  font-size: 24px;
+  margin-bottom: 24px;
   color: ${theme.colors.primary};
   font-weight: 400;
   letter-spacing: 0.5px;
-  padding-bottom: 20px;
+  padding-bottom: 16px;
   border-bottom: 1px solid rgba(200, 159, 123, 0.2);
   line-height: 1.4;
 
   @media (max-width: 840px) {
-    font-size: 24px;
+    font-size: 20px;
   }
 `;
 
@@ -113,12 +118,12 @@ export const SectionTitle = styled.div`
   color: ${theme.colors.secondary};
   text-transform: uppercase;
   letter-spacing: 1.2px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   margin-top: 8px;
 `;
 
 export const SectionDivider = styled.hr`
-  margin: 32px 0 24px;
+  margin: 24px 0 20px;
   height: 1px;
   background: linear-gradient(
     to right,
@@ -131,7 +136,7 @@ export const SectionDivider = styled.hr`
 
 // 필드 그룹
 export const FieldGroup = styled.div`
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 
   &:last-of-type {
     margin-bottom: 0;
@@ -459,4 +464,36 @@ export const ResultArea = styled.div`
       transform: translateY(0);
     }
   }
+`;
+
+export const ImageContainer = styled.div`
+  margin-top: 24px;
+  margin-bottom: 8px;
+`;
+
+export const GeneratedImage = styled.img`
+  width: 100%;
+  max-width: 600px;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(200, 159, 123, 0.15);
+  border: 1px solid rgba(200, 159, 123, 0.2);
+  display: block;
+  margin: 0 auto;
+`;
+
+export const ImageLoading = styled.div`
+  padding: 40px;
+  text-align: center;
+  color: ${theme.colors.textSecondary};
+  font-size: 14px;
+`;
+
+export const ImageError = styled.div`
+  padding: 20px;
+  background: rgba(224, 122, 95, 0.1);
+  border-radius: 12px;
+  color: ${theme.colors.accent};
+  font-size: 14px;
+  text-align: center;
+  border: 1px solid rgba(224, 122, 95, 0.2);
 `;

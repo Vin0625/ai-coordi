@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Header, HeaderTitle, Main } from "./components/styled";
 import FormCard from "./components/FormCard";
 import ResultCard from "./components/ResultCard";
+import { API_CONFIG } from "./config/api";
 import "./App.css";
 
 const App = () => {
@@ -13,7 +14,12 @@ const App = () => {
     age: "",
     weatherMode: "weather",
     weather: "mild",
-    region: "",
+    temperature: "",
+    rain: false,
+    snow: false,
+    wind: false,
+    sido: "",
+    sigungu: "",
     date: "",
     personalColor: "",
     personalColorCustom: "",
@@ -28,10 +34,13 @@ const App = () => {
   });
 
   const [summary, setSummary] = useState(
-    "아직 추천 전이에요! 👕\n원하는 조건을 입력하고 코디 추천 받아보세요."
+    "아직 추천 전이에요! 👕\n왼쪽에 정보를 입력하면 여기에 코디 추천이 나타날 거예요."
   );
 
   const [result, setResult] = useState(null); // null이면 아직 결과 없음
+  const [imageUrl, setImageUrl] = useState(null);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [imageError, setImageError] = useState(null);
 
   // 공통 입력 핸들러 (text, number, select 등)
   const handleChange = (e) => {
@@ -54,19 +63,30 @@ const App = () => {
   // select (weatherMode 등)용
   const handleSelectChange = (e) => {
     const { id, value } = e.target;
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [id]: value,
+      };
+      // 시도 선택 시 시군구 초기화
+      if (id === "sido") {
+        newData.sigungu = "";
+      }
+      return newData;
+    });
+  };
+
+  // 체크박스 핸들러
+  const handleCheckboxChange = (e) => {
+    const { id, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [id]: value,
+      [id]: checked,
     }));
   };
 
   const buildSummary = (data) => {
-    const genderText =
-      data.gender === "male"
-        ? "남성"
-        : data.gender === "female"
-        ? "여성"
-        : "기타";
+    const genderText = data.gender === "male" ? "남성" : "여성";
 
     let weatherText = "";
     if (data.weatherMode === "weather") {
@@ -74,11 +94,22 @@ const App = () => {
         mild: "선선한 날씨",
         hot: "더운 날씨",
         cold: "추운 날씨",
-        rainy: "비/눈 오는 날씨",
       };
       weatherText = map[data.weather] || "";
+      if (data.temperature) {
+        weatherText += ` (${data.temperature}°C)`;
+      }
+      const conditions = [];
+      if (data.rain) conditions.push("비");
+      if (data.snow) conditions.push("눈");
+      if (data.wind) conditions.push("바람");
+      if (conditions.length > 0) {
+        weatherText += `, ${conditions.join(", ")}`;
+      }
     } else {
-      weatherText = `${data.region || "어떤 지역"} ${data.date || ""} 날씨`;
+      weatherText = `${data.sido || ""} ${data.sigungu || ""} ${
+        data.date || ""
+      } 날씨`;
     }
 
     return `${data.age}세 ${genderText}, ${data.height}cm / ${data.weight}kg, ${weatherText} 기준 코디 추천`;
@@ -151,9 +182,14 @@ const App = () => {
         mild: "선선한 날씨",
         hot: "더운 날씨",
         cold: "추운 날씨",
-        rainy: "비/눈",
       };
       tags.push(wMap[data.weather]);
+      if (data.temperature) {
+        tags.push(`${data.temperature}°C`);
+      }
+      if (data.rain) tags.push("비");
+      if (data.snow) tags.push("눈");
+      if (data.wind) tags.push("바람");
     }
     if (data.temp) {
       tags.push(
@@ -167,22 +203,31 @@ const App = () => {
 
     // 코디 설명
     let weatherSentence = "";
-    switch (data.weatherMode === "weather" ? data.weather : "mild") {
-      case "cold":
-        weatherSentence =
-          "추운 날씨에 맞춰 보온을 챙기되, 부해 보이지 않도록 레이어링을 활용합니다.";
-        break;
-      case "hot":
-        weatherSentence =
-          "더운 날씨에 맞게 통풍이 잘 되는 얇은 원단과 밝은 색 위주로 구성합니다.";
-        break;
-      case "rainy":
-        weatherSentence =
-          "비/눈을 고려해 방수 소재와 쉽게 젖지 않는 아이템 위주로 맞춥니다.";
-        break;
-      default:
-        weatherSentence =
-          "선선한 날씨에 맞는 가벼운 아우터와 베이직한 아이템으로 구성합니다.";
+    if (data.weatherMode === "weather") {
+      switch (data.weather) {
+        case "cold":
+          weatherSentence =
+            "추운 날씨에 맞춰 보온을 챙기되, 부해 보이지 않도록 레이어링을 활용합니다.";
+          break;
+        case "hot":
+          weatherSentence =
+            "더운 날씨에 맞게 통풍이 잘 되는 얇은 원단과 밝은 색 위주로 구성합니다.";
+          break;
+        default:
+          weatherSentence =
+            "선선한 날씨에 맞는 가벼운 아우터와 베이직한 아이템으로 구성합니다.";
+      }
+      if (data.rain || data.snow) {
+        weatherSentence +=
+          " 비/눈을 고려해 방수 소재와 쉽게 젖지 않는 아이템을 선택합니다.";
+      }
+      if (data.wind) {
+        weatherSentence += " 바람을 고려해 적절한 아우터를 선택합니다.";
+      }
+    } else {
+      weatherSentence = `${data.sido || ""} ${
+        data.sigungu || ""
+      } 지역 날씨에 맞춰 코디를 구성합니다.`;
     }
 
     const coordiDescription =
@@ -279,19 +324,35 @@ const App = () => {
         ? data.imageStyleCustom || ""
         : imageStyleMap[data.imageStyle] || "lookbook style";
 
+    let weatherDesc = "";
+    if (data.weatherMode === "weather") {
+      weatherDesc =
+        data.weather === "cold"
+          ? "cold weather"
+          : data.weather === "hot"
+          ? "hot weather"
+          : "mild weather";
+      if (data.temperature) {
+        weatherDesc += `, ${data.temperature}°C`;
+      }
+      const conditions = [];
+      if (data.rain) conditions.push("rainy");
+      if (data.snow) conditions.push("snowy");
+      if (data.wind) conditions.push("windy");
+      if (conditions.length > 0) {
+        weatherDesc += `, ${conditions.join(", ")}`;
+      }
+    } else {
+      weatherDesc = `${data.sido || ""} ${data.sigungu || ""} weather`;
+    }
+
     const imagePrompt =
       `full-body fashion ${
         data.imageStyle === "illustration" ? "illustration" : "image"
       } of a ${data.age}-year-old ${
         genderText === "여성" ? "woman" : "man"
       }, ` +
-      `${styleText} style outfit for ${
-        data.weather === "cold"
-          ? "cold weather"
-          : data.weather === "hot"
-          ? "hot weather"
-          : "mild weather"
-      }, ` +
+      `${styleText} style outfit for ${weatherDesc}, ` +
       `${pcText ? pcText + ", " : ""}` +
       `${top}, ${bottom}, ${outer}, wearing ${shoes}, with ${acc}. ` +
       `clean background, ${imageStyleText}, high quality, detailed clothing textures`;
@@ -306,17 +367,56 @@ const App = () => {
     };
   };
 
-  const handleSubmit = (e) => {
+  // 필수 항목이 모두 입력되었는지 확인
+  const isFormValid = () => {
+    const hasBasicInfo =
+      formData.height && formData.weight && formData.gender && formData.age;
+
+    let hasWeatherInfo = false;
+    if (formData.weatherMode === "weather") {
+      hasWeatherInfo = !!formData.weather;
+    } else {
+      hasWeatherInfo = !!(formData.sido && formData.sigungu && formData.date);
+    }
+
+    return hasBasicInfo && hasWeatherInfo;
+  };
+
+  // 이미지 생성 함수
+  const generateImage = async (prompt) => {
+    setIsGeneratingImage(true);
+    setImageError(null);
+    setImageUrl(null);
+
+    try {
+      const response = await fetch(API_CONFIG.IMAGE_GENERATION_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!response.ok) {
+        throw new Error("이미지 생성에 실패했어요");
+      }
+
+      const data = await response.json();
+      setImageUrl(data.imageUrl || data.url);
+    } catch (error) {
+      console.error("Image generation error:", error);
+      setImageError(error.message || "이미지 생성 중 오류가 발생했어요");
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // 필수값 체크
-    if (
-      !formData.height ||
-      !formData.weight ||
-      !formData.gender ||
-      !formData.age
-    ) {
-      alert("필수 항목을 모두 입력해 주세요.");
+    if (!isFormValid()) {
+      alert("필수 항목을 모두 입력해주세요!");
       return;
     }
 
@@ -325,12 +425,17 @@ const App = () => {
 
     const newResult = generateResult(formData);
     setResult(newResult);
+
+    // 이미지 생성 (프롬프트가 있으면)
+    if (newResult.imagePrompt) {
+      await generateImage(newResult.imagePrompt);
+    }
   };
 
   return (
     <div>
       <Header>
-        <HeaderTitle>그날 뭐입지?</HeaderTitle>
+        <HeaderTitle>그날아 뭐입지?</HeaderTitle>
       </Header>
 
       <Main>
@@ -339,9 +444,17 @@ const App = () => {
           handleChange={handleChange}
           handleRadioChange={handleRadioChange}
           handleSelectChange={handleSelectChange}
+          handleCheckboxChange={handleCheckboxChange}
           handleSubmit={handleSubmit}
+          isFormValid={isFormValid()}
         />
-        <ResultCard summary={summary} result={result} />
+        <ResultCard
+          summary={summary}
+          result={result}
+          imageUrl={imageUrl}
+          isGeneratingImage={isGeneratingImage}
+          imageError={imageError}
+        />
       </Main>
     </div>
   );

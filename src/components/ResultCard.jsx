@@ -7,16 +7,24 @@ import {
   ResultTitle,
   ResultSectionTitle,
   ResultBox,
-  PromptBox,
   Badge,
   PillRow,
-  Hint,
+  ImageContainer,
+  GeneratedImage,
+  ImageLoading,
+  ImageError,
 } from "./styled";
 
-const ResultCard = ({ summary, result }) => {
+const ResultCard = ({
+  summary,
+  result,
+  imageUrl,
+  isGeneratingImage,
+  imageError,
+}) => {
   return (
     <Card>
-      <CardTitle>추천 결과</CardTitle>
+      <CardTitle>그날이가 추천한 코디</CardTitle>
 
       <SummaryBox>
         {summary.split("\n").map((line, idx) => (
@@ -34,32 +42,49 @@ const ResultCard = ({ summary, result }) => {
             ))}
           </PillRow>
 
-          <ResultSectionTitle>코디 설명</ResultSectionTitle>
+          <ResultSectionTitle>이 코디를 추천한 이유</ResultSectionTitle>
           <ResultBox>
             {result.coordiDescription.split("\n").map((line, idx) => (
               <div key={idx}>{line}</div>
             ))}
           </ResultBox>
 
-          <ResultSectionTitle>아이템 리스트</ResultSectionTitle>
+          <ResultSectionTitle>이렇게 입어보세요</ResultSectionTitle>
           <ResultBox>
             {result.itemList.split("\n").map((line, idx) => (
               <div key={idx}>{line}</div>
             ))}
           </ResultBox>
 
-          <ResultSectionTitle>스타일링 팁</ResultSectionTitle>
+          <ResultSectionTitle>스타일링 꿀팁</ResultSectionTitle>
           <ResultBox>
             {result.tips.split("\n").map((line, idx) => (
               <div key={idx}>{line}</div>
             ))}
           </ResultBox>
 
-          <ResultSectionTitle>이미지 생성용 프롬프트</ResultSectionTitle>
-          <PromptBox>{result.imagePrompt}</PromptBox>
-          <Hint>
-            위 프롬프트를 그대로 복사해서 이미지 생성 도구에 넣으면 됩니다.
-          </Hint>
+          {imageUrl && (
+            <>
+              <ResultSectionTitle>생성된 코디 이미지</ResultSectionTitle>
+              <ImageContainer>
+                <GeneratedImage src={imageUrl} alt="생성된 코디 이미지" />
+              </ImageContainer>
+            </>
+          )}
+
+          {isGeneratingImage && (
+            <ImageContainer>
+              <ImageLoading>
+                이미지를 생성하고 있어요... 잠시만 기다려주세요! 🎨
+              </ImageLoading>
+            </ImageContainer>
+          )}
+
+          {imageError && (
+            <ImageContainer>
+              <ImageError>{imageError}</ImageError>
+            </ImageContainer>
+          )}
         </ResultArea>
       )}
     </Card>
@@ -67,4 +92,3 @@ const ResultCard = ({ summary, result }) => {
 };
 
 export default ResultCard;
-
