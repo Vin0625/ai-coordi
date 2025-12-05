@@ -391,6 +391,7 @@ const App = () => {
     try {
       const response = await fetch(API_CONFIG.IMAGE_GENERATION_URL, {
         method: "POST",
+        mode: "cors",
         headers: {
           "Content-Type": "application/json",
         },
