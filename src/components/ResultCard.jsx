@@ -7,10 +7,10 @@ import {
   ResultTitle,
   ResultSectionTitle,
   ResultBox,
+  PromptBox,
   Badge,
   PillRow,
   ImageContainer,
-  GeneratedImage,
   ImageLoading,
   ImageError,
 } from "./styled";
@@ -18,7 +18,7 @@ import {
 const ResultCard = ({
   summary,
   result,
-  imageUrl,
+  imagePrompt,
   isGeneratingImage,
   imageError,
 }) => {
@@ -63,19 +63,17 @@ const ResultCard = ({
             ))}
           </ResultBox>
 
-          {imageUrl && (
+          {imagePrompt && (
             <>
-              <ResultSectionTitle>생성된 코디 이미지</ResultSectionTitle>
-              <ImageContainer>
-                <GeneratedImage src={imageUrl} alt="생성된 코디 이미지" />
-              </ImageContainer>
+              <ResultSectionTitle>이미지 생성 프롬프트</ResultSectionTitle>
+              <PromptBox>{imagePrompt}</PromptBox>
             </>
           )}
 
           {isGeneratingImage && (
             <ImageContainer>
               <ImageLoading>
-                이미지를 생성하고 있어요... 잠시만 기다려주세요! 🎨
+                코디를 추천하고 있어요... 잠시만 기다려주세요! 🎨
               </ImageLoading>
             </ImageContainer>
           )}

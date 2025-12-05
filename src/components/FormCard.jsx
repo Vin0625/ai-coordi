@@ -250,6 +250,17 @@ const FormCard = ({
                 </FieldGroup>
               </Row>
               <FieldGroup>
+                <Label htmlFor="detailRegion">상세 지역 (선택)</Label>
+                <Input
+                  id="detailRegion"
+                  type="text"
+                  placeholder="예: 강남구 역삼동, 서초동 등"
+                  value={formData.detailRegion}
+                  onChange={handleChange}
+                />
+                <Hint>읍면동 등 더 구체적인 지역을 입력할 수 있어요</Hint>
+              </FieldGroup>
+              <FieldGroup>
                 <Label htmlFor="date">
                   날짜 <RequiredStar>*</RequiredStar>
                 </Label>

@@ -20,6 +20,7 @@ const App = () => {
     wind: false,
     sido: "",
     sigungu: "",
+    detailRegion: "",
     date: "",
     personalColor: "",
     personalColorCustom: "",
@@ -38,7 +39,7 @@ const App = () => {
   );
 
   const [result, setResult] = useState(null); // null이면 아직 결과 없음
-  const [imageUrl, setImageUrl] = useState(null);
+  const [imagePrompt, setImagePrompt] = useState(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [imageError, setImageError] = useState(null);
 
@@ -107,9 +108,11 @@ const App = () => {
         weatherText += `, ${conditions.join(", ")}`;
       }
     } else {
-      weatherText = `${data.sido || ""} ${data.sigungu || ""} ${
-        data.date || ""
-      } 날씨`;
+      let regionText = `${data.sido || ""} ${data.sigungu || ""}`;
+      if (data.detailRegion) {
+        regionText += ` ${data.detailRegion}`;
+      }
+      weatherText = `${regionText} ${data.date || ""} 날씨`;
     }
 
     return `${data.age}세 ${genderText}, ${data.height}cm / ${data.weight}kg, ${weatherText} 기준 코디 추천`;
@@ -225,9 +228,11 @@ const App = () => {
         weatherSentence += " 바람을 고려해 적절한 아우터를 선택합니다.";
       }
     } else {
-      weatherSentence = `${data.sido || ""} ${
-        data.sigungu || ""
-      } 지역 날씨에 맞춰 코디를 구성합니다.`;
+      let regionText = `${data.sido || ""} ${data.sigungu || ""}`;
+      if (data.detailRegion) {
+        regionText += ` ${data.detailRegion}`;
+      }
+      weatherSentence = `${regionText} 지역 날씨에 맞춰 코디를 구성합니다.`;
     }
 
     const coordiDescription =
@@ -343,7 +348,11 @@ const App = () => {
         weatherDesc += `, ${conditions.join(", ")}`;
       }
     } else {
-      weatherDesc = `${data.sido || ""} ${data.sigungu || ""} weather`;
+      let regionText = `${data.sido || ""} ${data.sigungu || ""}`;
+      if (data.detailRegion) {
+        regionText += ` ${data.detailRegion}`;
+      }
+      weatherDesc = `${regionText} weather`;
     }
 
     const imagePrompt =
@@ -382,11 +391,71 @@ const App = () => {
     return hasBasicInfo && hasWeatherInfo;
   };
 
-  // 이미지 생성 함수
-  const generateImage = async (prompt) => {
+  // 구조화된 데이터 생성 함수
+  const buildStructuredData = (data) => {
+    // number 변환
+    const processedData = {
+      ...data,
+      height: Number(data.height),
+      weight: Number(data.weight),
+      age: Number(data.age),
+    };
+
+    return {
+      userInfo: {
+        age: processedData.age,
+        gender: processedData.gender, // "female" or "male"
+        height: processedData.height, // cm
+        weight: processedData.weight, // kg
+        tempSensitivity: processedData.temp || "normal", // "cold", "hot", "normal"
+      },
+      style: {
+        personalColor:
+          processedData.personalColor === "custom"
+            ? processedData.personalColorCustom
+            : processedData.personalColor, // "spring_warm", "summer_cool", etc. or custom string
+        preferredStyle:
+          processedData.style === "custom"
+            ? processedData.styleCustom
+            : processedData.style, // "minimal", "casual", "street", etc. or custom string
+        purpose:
+          processedData.purpose === "custom"
+            ? processedData.purposeCustom
+            : processedData.purpose, // "daily", "date", "interview", etc. or custom string
+      },
+      weather:
+        processedData.weatherMode === "weather"
+          ? {
+              mode: "weather",
+              condition: processedData.weather, // "mild", "hot", "cold"
+              temperature: processedData.temperature
+                ? Number(processedData.temperature)
+                : null, // Celsius
+              rain: processedData.rain || false,
+              snow: processedData.snow || false,
+              wind: processedData.wind || false,
+            }
+          : {
+              mode: "region",
+              sido: processedData.sido, // 시도
+              sigungu: processedData.sigungu, // 시군구
+              detailRegion: processedData.detailRegion || "", // 상세 지역 (읍면동 등)
+              date: processedData.date, // 날짜
+            },
+      imageStyle:
+        processedData.imageStyle === "custom"
+          ? processedData.imageStyleCustom
+          : processedData.imageStyle, // "realistic", "illustration", "editorial", or custom string
+      memo: processedData.memo || "", // 추가 메모
+    };
+  };
+
+  // 코디 추천 함수 (서버에서 result 데이터와 imagePrompt 받음)
+  const generateCoordi = async (structuredData) => {
     setIsGeneratingImage(true);
     setImageError(null);
-    setImageUrl(null);
+    setImagePrompt(null);
+    setResult(null); // 이전 결과 초기화
 
     try {
       const response = await fetch(API_CONFIG.IMAGE_GENERATION_URL, {
@@ -395,18 +464,41 @@ const App = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify(structuredData),
       });
 
       if (!response.ok) {
-        throw new Error("이미지 생성에 실패했어요");
+        throw new Error("코디 추천에 실패했어요");
       }
 
       const data = await response.json();
-      setImageUrl(data.imageUrl || data.url);
+
+      // 서버에서 받은 result 데이터 설정
+      if (
+        data.resultTitle &&
+        data.tags &&
+        data.coordiDescription &&
+        data.itemList &&
+        data.tips
+      ) {
+        setResult({
+          resultTitle: data.resultTitle,
+          tags: data.tags,
+          coordiDescription: data.coordiDescription,
+          itemList: data.itemList,
+          tips: data.tips,
+        });
+      } else {
+        throw new Error("서버 응답 형식이 올바르지 않아요");
+      }
+
+      // 이미지 프롬프트 설정 (있으면)
+      if (data.imagePrompt) {
+        setImagePrompt(data.imagePrompt);
+      }
     } catch (error) {
-      console.error("Image generation error:", error);
-      setImageError(error.message || "이미지 생성 중 오류가 발생했어요");
+      console.error("Coordi generation error:", error);
+      setImageError(error.message || "코디 추천 중 오류가 발생했어요");
     } finally {
       setIsGeneratingImage(false);
     }
@@ -424,13 +516,9 @@ const App = () => {
     const newSummary = buildSummary(formData);
     setSummary(newSummary);
 
-    const newResult = generateResult(formData);
-    setResult(newResult);
-
-    // 이미지 생성 (프롬프트가 있으면)
-    if (newResult.imagePrompt) {
-      await generateImage(newResult.imagePrompt);
-    }
+    // 서버에서 코디 추천 및 이미지 생성 (구조화된 데이터 전송)
+    const structuredData = buildStructuredData(formData);
+    await generateCoordi(structuredData);
   };
 
   return (
@@ -452,7 +540,7 @@ const App = () => {
         <ResultCard
           summary={summary}
           result={result}
-          imageUrl={imageUrl}
+          imagePrompt={imagePrompt}
           isGeneratingImage={isGeneratingImage}
           imageError={imageError}
         />
